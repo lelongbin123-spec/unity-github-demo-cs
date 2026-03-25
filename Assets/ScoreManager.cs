@@ -14,21 +14,28 @@ public class ScoreManager : MonoBehaviour
     private bool isGameOver = false;
     public GameObject player;
     public GameObject gemSpawner;
+
+    public static ScoreManager instance;
     // khai báo một hàm dành cho lớp ScoreManager nhằm tăng số điểm của người chơi
     private void Start()
     {
         score = 0; // reset điểm khi bắt đầu game
         
-        remainingTime = 30f; //thời gian còn lại tại thời điểm bắt đầu bằng 30s (thời lượng của trò chơi)
+        remainingTime = 60f; //thời gian còn lại tại thời điểm bắt đầu bằng 30s (thời lượng của trò chơi)
         gameOverPanel.SetActive(false);
         StartCoroutine(CountdownTimer());
         // là một phương thức nâng cao để gọi hàm CountdownTimer
         // nhằm cho phép đồng hồ chạy song song, tiếp tục đếm khi chuyển qua frame mới và kết thúc ở frame mới khi đạt đúng thời gian
     }
-
+    void Awake()
+    {
+        instance = this;
+    }
     public static void AddScore(int amount) //(int amount) nghĩa là hàm sẽ chỉ nhận giá trị là integer, và giá trị này sẽ được gán vào biến có tên amount
     {
         score += amount; //tăng điểm theo giá trị của amount được truyền vào tại sự kiện gọi AddScore
+        if (score < 0)
+            score = 0;
     }
 
     void Update()

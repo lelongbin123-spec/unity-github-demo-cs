@@ -2,42 +2,132 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum SpawnDirection
+{
+    Top,
+    Left,
+    Right,
+    Bottom
+}
+
 public class GemFallScript : MonoBehaviour
 {
-    // Khai báo biến để chứa prefab của viên ngọc. Đây sẽ là đối tượng mà chúng ta sẽ tạo ra trong trò chơi.
+    [Header("Prefabs")]
     public GameObject gemPrefab;
-    // Biến đếm thời gian kể từ lần sinh viên ngọc cuối cùng.
-    public float timer;
-    // Khoảng thời gian (tính bằng giây) giữa mỗi lần sinh viên ngọc mới.
-    public float spawnInterval = 3f; //tần suất spawn: 3 giây / 1 gem
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
+    public GameObject badItemPrefab;
+    public GameObject[] highValuePrefabs;
+    public GameObject speedPowerUpPrefab;
+    public GameObject obstaclePrefab;
 
-    // Update is called once per frame
+    [Header("Spawn Settings")]
+    public float spawnInterval = 2f;
+    private float timer;
+
+    [Header("Chance")]
+    public float highValueChance = 0.2f;
+    public float badItemChance = 0.2f;
+    public float speedPowerChance = 0.1f;
+    public float obstacleChance = 0.15f;
+
     void Update()
     {
-        // Cộng dồn thời gian từ lần cuối cập nhật đến bây giờ vào biến timer.
         timer += Time.deltaTime;
-        // Kiểm tra nếu thời gian đã đủ lớn bằng hoặc lớn hơn khoảng thời gian sinh viên ngọc.
+
         if (timer >= spawnInterval)
         {
-            SpawnGem(); // Gọi hàm sinh viên ngọc.
-            timer = 0; // Đặt lại biến đếm thời gian.
+            SpawnGem();
+            timer = 0;
         }
     }
+
     void SpawnGem()
     {
-        /* Khai báo và tạo một biến có giá trị ngẫu nhiên trong khoảng màn hình trước khi tạo gem mới. 
-        * Biến này đóng vai trò là tọa độ X (ngang) mới.
-        */
-        float randomX = Random.Range(-8f, 8f); //Màn hình rộng 16 point nên lề trái là -8 và biên phải là 8
-                                               //Khai báo một biến tọa độ vị trí và lưu giá trị tọa độ trên
-        Vector3 spawnPosition = new Vector3(randomX, 6f, 0); // Đưa biến số này vào Vector3, để tạo tọa độ vị trí mới
+        // 🧱 Spawn obstacle riêng
+        if (obstaclePrefab != null && Random.value < obstacleChance)
+        {
+            Vector3 groundPos = new Vector3(Random.Range(-8f, 8f), -3.5f, 0);
+            Instantiate(obstaclePrefab, groundPos, Quaternion.identity);
+        }
 
-        //Đưa tọa độ này vào function (hàm) Instantiate để tạo và thả viên gem mới
-        Instantiate(gemPrefab, spawnPosition, Quaternion.identity);
+        float random = Random.value;
+
+        GameObject prefabToSpawn;
+
+        // 🎯 Chọn loại item
+        if (random < highValueChance)
+        {
+            int index = Random.Range(0, highValuePrefabs.Length);
+            prefabToSpawn = highValuePrefabs[index];
+        }
+        else if (random < highValueChance + badItemChance)
+        {
+            prefabToSpawn = badItemPrefab;
+        }
+        else if (random < highValueChance + badItemChance + speedPowerChance)
+        {
+            prefabToSpawn = speedPowerUpPrefab;
+        }
+        else
+        {
+            prefabToSpawn = gemPrefab;
+        }
+
+        // 🔀 RANDOM 4 HƯỚNG CHO TẤT CẢ
+        SpawnDirection direction = (SpawnDirection)Random.Range(0, 4);
+
+        // 📍 Vị trí spawn
+        Vector3 spawnPosition = Vector3.zero;
+
+        switch (direction)
+        {
+            case SpawnDirection.Top:
+                spawnPosition = new Vector3(Random.Range(-8f, 8f), 6f, 0);
+                break;
+
+            case SpawnDirection.Left:
+                spawnPosition = new Vector3(-9f, Random.Range(-4f, 4f), 0);
+                break;
+
+            case SpawnDirection.Right:
+                spawnPosition = new Vector3(9f, Random.Range(-4f, 4f), 0);
+                break;
+
+            case SpawnDirection.Bottom:
+                spawnPosition = new Vector3(Random.Range(-8f, 8f), -5f, 0);
+                break;
+        }
+
+        // 🚀 Spawn object
+        GameObject obj = Instantiate(prefabToSpawn, spawnPosition, Quaternion.identity);
+
+        // 🧭 Hướng di chuyển
+        Vector2 moveDir = Vector2.down;
+
+        switch (direction)
+        {
+            case SpawnDirection.Top:
+                moveDir = Vector2.down;
+                break;
+
+            case SpawnDirection.Left:
+                moveDir = Vector2.right;
+                break;
+
+            case SpawnDirection.Right:
+                moveDir = Vector2.left;
+                break;
+
+            case SpawnDirection.Bottom:
+                moveDir = Vector2.up;
+                break;
+        }
+
+        // 🎯 Gửi direction cho object
+        GemMover Gemmover = obj.GetComponent<GemMover>();
+        if (Gemmover != null)
+        {
+            Gemmover.Init(moveDir);
+        }
+        
     }
 }
